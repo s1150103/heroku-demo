@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>メンバー管理システム</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f0f2f5; padding: 40px 16px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; color: #333; margin-bottom: 24px; }
+
+    /* カード */
+    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 1rem; color: #555; margin-bottom: 16px; }
+
+    /* フォーム */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    input, select {
+      width: 100%; padding: 10px 12px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 0.95rem; outline: none;
+    }
+    input:focus, select:focus { border-color: #4f6ef7; }
+    .btn {
+      padding: 10px 20px; border-radius: 8px; border: none;
+      font-size: 0.95rem; cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #4f6ef7; color: #fff; }
+    .btn-danger  { background: #ff4d4f; color: #fff; padding: 6px 12px; font-size: 0.8rem; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* フィルタータブ */
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-tab {
+      padding: 6px 16px; border-radius: 20px; border: 1px solid #ddd;
+      background: #f7f8fc; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+    }
+    .filter-tab.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
+
+    /* メンバーリスト */
+    .member-list { display: flex; flex-direction: column; gap: 10px; }
+    .member-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; border: 1px solid #eee; border-radius: 10px;
+      transition: box-shadow 0.2s;
+    }
+    .member-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+    /* アバター */
+    .avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: #fff; font-size: 1rem; flex-shrink: 0;
+    }
+    .avatar-EMPLOYEE  { background: #4f6ef7; }
+    .avatar-PART_TIMER { background: #52c41a; }
+    .avatar-ADMIN     { background: #ff7a00; }
+
+    /* ロールバッジ */
+    .role-badge {
+      padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+    .badge-EMPLOYEE   { background: #e8ecff; color: #4f6ef7; }
+    .badge-PART_TIMER { background: #f0fff4; color: #52c41a; }
+    .badge-ADMIN      { background: #fff3e6; color: #ff7a00; }
+
+    /* 権限タグ */
+    .permissions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .perm-tag {
+      padding: 2px 8px; border-radius: 4px; font-size: 0.72rem;
+      background: #f5f5f5; color: #666;
+    }
+
+    /* 統計 */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .stat-item { text-align: center; padding: 12px; background: #f7f8fc; border-radius: 8px; }
+    .stat-num { font-size: 1.6rem; font-weight: 700; color: #4f6ef7; }
+    .stat-label { font-size: 0.75rem; color: #888; margin-top: 4px; }
+
+    /* エラー */
+    .error { color: #ff4d4f; font-size: 0.85rem; margin-top: 8px; }
+    .empty { text-align: center; padding: 40px; color: #aaa; }
+
+    .member-info { flex: 1; }
+    .member-name { font-weight: 700; font-size: 0.95rem; }
+    .member-dept { font-size: 0.8rem; color: #888; }
+    .member-extra { font-size: 0.78rem; color: #aaa; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <h1>メンバー管理システム</h1>
+
+    <!-- ===== 統計カード ===== -->
+    <div class="card">
+      <h2>統計（computedで自動計算）</h2>
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-num">{{ totalCount }}</div>
+          <div class="stat-label">総メンバー数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:#4f6ef7">{{ employeeCount }}</div>
+          <div class="stat-label">社員</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:#52c41a">{{ partTimerCount }}</div>
+          <div class="stat-label">アルバイト</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:#ff7a00">{{ adminCount }}</div>
+          <div class="stat-label">管理者</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 登録フォーム ===== -->
+    <div class="card">
+      <h2>メンバー登録</h2>
+      <div class="form-grid">
+        <input v-model="form.name" placeholder="名前" />
+        <input v-model="form.department" placeholder="部署" />
+        <select v-model="form.type">
+          <option value="">種別を選択</option>
+          <option value="EMPLOYEE">社員</option>
+          <option value="PART_TIMER">アルバイト</option>
+          <option value="ADMIN">管理者</option>
+        </select>
+        <!-- 種別によって入力項目が変わる（v-if） -->
+        <input v-if="form.type === 'EMPLOYEE'"   v-model="form.extra" placeholder="役職（例：エンジニア）" />
+        <input v-if="form.type === 'PART_TIMER'" v-model="form.extra" placeholder="週の勤務時間（例：20）" type="number" />
+        <input v-if="form.type === 'ADMIN'"      v-model="form.extra" placeholder="管理者レベル（例：L1）" />
+      </div>
+      <button class="btn btn-primary" @click="register" :disabled="!canSubmit">登録する</button>
+      <div class="error" v-if="error">{{ error }}</div>
+    </div>
+
+    <!-- ===== フィルター + 一覧 ===== -->
+    <div class="card">
+      <h2>メンバー一覧</h2>
+
+      <!-- フィルタータブ -->
+      <div class="filter-tabs">
+        <div
+          v-for="tab in filterTabs"
+          :key="tab.value"
+          class="filter-tab"
+          :class="{ active: activeFilter === tab.value }"
+          @click="activeFilter = tab.value"
+        >{{ tab.label }}</div>
+      </div>
+
+      <!-- メンバーリスト（filteredMembersはcomputed） -->
+      <div class="member-list">
+        <div v-if="filteredMembers.length === 0" class="empty">
+          メンバーがいません
+        </div>
+        <div
+          v-for="member in filteredMembers"
+          :key="member.id"
+          class="member-card"
+        >
+          <!-- アバター（種別によって色が変わる） -->
+          <div class="avatar" :class="'avatar-' + getRoleType(member.roleLabel)">
+            {{ member.name[0] }}
+          </div>
+
+          <!-- メンバー情報 -->
+          <div class="member-info">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="member-name">{{ member.name }}</span>
+              <!-- ★ ポリモーフィズムの結果: roleLabel（社員/アルバイト/管理者） -->
+              <span class="role-badge" :class="'badge-' + getRoleType(member.roleLabel)">
+                {{ member.roleLabel }}
+              </span>
+            </div>
+            <div class="member-dept">{{ member.department }}</div>
+            <!-- ★ ポリモーフィズムの結果: permissions（種別によって異なる） -->
+            <div class="permissions">
+              <span v-for="perm in member.permissions" :key="perm" class="perm-tag">
+                {{ perm }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 削除ボタン -->
+          <button class="btn btn-danger" @click="deleteMember(member.id)">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+  setup() {
+    const members = ref([]);
+    const error   = ref('');
+    const activeFilter = ref('ALL');
+
+    const form = ref({
+      name: '',
+      department: '',
+      type: '',
+      extra: ''
+    });
+
+    const filterTabs = [
+      { value: 'ALL',       label: 'すべて' },
+      { value: 'EMPLOYEE',  label: '社員' },
+      { value: 'PART_TIMER',label: 'アルバイト' },
+      { value: 'ADMIN',     label: '管理者' },
+    ];
+
+    // ★ computed: 統計を自動計算
+    const totalCount    = computed(() => members.value.length);
+    const employeeCount = computed(() => members.value.filter(m => m.roleLabel === '社員').length);
+    const partTimerCount= computed(() => members.value.filter(m => m.roleLabel === 'アルバイト').length);
+    const adminCount    = computed(() => members.value.filter(m => m.roleLabel === '管理者').length);
+
+    // ★ computed: フィルタリング
+    const filteredMembers = computed(() => {
+      if (activeFilter.value === 'ALL') return members.value;
+      return members.value.filter(m => getRoleType(m.roleLabel) === activeFilter.value);
+    });
+
+    // ★ computed: 登録ボタンの活性/非活性
+    const canSubmit = computed(() =>
+      form.value.name.trim() &&
+      form.value.department.trim() &&
+      form.value.type
+    );
+
+    // roleLabel → dtypeに変換
+    function getRoleType(label) {
+      const map = { '社員': 'EMPLOYEE', 'アルバイト': 'PART_TIMER', '管理者': 'ADMIN' };
+      return map[label] || '';
+    }
+
+    // ★ onMounted: 画面表示後に自動でデータ取得（Vue3ライフサイクル）
+    onMounted(async () => {
+      await fetchMembers();
+    });
+
+    async function fetchMembers() {
+      const res = await fetch('/api/members');
+      members.value = await res.json();
+    }
+
+    // ★ function: 登録処理
+    async function register() {
+      error.value = '';
+      try {
+        const res = await fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form.value)
+        });
+        if (!res.ok) throw new Error('登録に失敗しました');
+        form.value = { name: '', department: '', type: '', extra: '' };
+        await fetchMembers();
+      } catch (e) {
+        error.value = e.message;
+      }
+    }
+
+    // ★ function: 削除処理
+    async function deleteMember(id) {
+      await fetch(`/api/members/${id}`, { method: 'DELETE' });
+      await fetchMembers();
+    }
+
+    return {
+      members, form, error, activeFilter, filterTabs,
+      totalCount, employeeCount, partTimerCount, adminCount,
+      filteredMembers, canSubmit,
+      register, deleteMember, getRoleType
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
