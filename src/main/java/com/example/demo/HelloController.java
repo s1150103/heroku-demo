@@ -15,11 +15,6 @@ public class HelloController {
         this.messageRepository = messageRepository;
     }
 
-    @GetMapping("/")
-    public String hello() {
-        return "Hello from Heroku!";
-    }
-
     @GetMapping("/api/status")
     public String status() {
         return "Application is running successfully!";
