@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>名前登録システム</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 24px; color: #333; }
+
+    .form { display: flex; gap: 8px; margin-bottom: 24px; }
+    .form input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form input:focus { border-color: #4f6ef7; }
+    .form button {
+      padding: 10px 20px;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .form button:hover { background: #3a57d4; }
+    .form button:disabled { background: #aaa; cursor: not-allowed; }
+
+    .error { color: #e53e3e; font-size: 0.85rem; margin-bottom: 12px; }
+
+    .count { font-size: 0.85rem; color: #888; margin-bottom: 12px; }
+
+    .list { list-style: none; }
+    .list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: #f7f8fc;
+      border: 1px solid #e8eaf0;
+      transition: background 0.15s;
+    }
+    .list li:hover { background: #eef0fb; }
+
+    .person-name { font-size: 1rem; color: #333; }
+    .person-id { font-size: 0.75rem; color: #aaa; margin-left: 8px; }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: color 0.15s;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .delete-btn:hover { color: #e53e3e; background: #fff0f0; }
+
+    .empty { text-align: center; color: #aaa; padding: 32px 0; font-size: 0.9rem; }
+    .loading { text-align: center; color: #aaa; padding: 32px 0; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <h1>名前登録システム</h1>
+
+    <!-- 入力フォーム -->
+    <div class="form">
+      <!-- v-model: inputName（ref）と双方向バインド -->
+      <input
+        v-model="inputName"
+        placeholder="名前を入力..."
+        @keyup.enter="addPerson"
+      />
+      <!-- :disabled: 入力が空の時はボタンを無効化（computed） -->
+      <button @click="addPerson" :disabled="!canSubmit">登録</button>
+    </div>
+
+    <!-- エラーメッセージ（v-if: errorがある時だけ表示） -->
+    <div class="error" v-if="error">{{ error }}</div>
+
+    <!-- 件数表示（computed で自動計算） -->
+    <div class="count" v-if="!loading">
+      登録件数: {{ totalCount }} 件
+    </div>
+
+    <!-- ローディング中 -->
+    <div class="loading" v-if="loading">読み込み中...</div>
+
+    <!-- 一覧 -->
+    <ul class="list" v-else-if="persons.length > 0">
+      <!-- v-for: persons配列をループして表示 -->
+      <li v-for="person in persons" :key="person.id">
+        <div>
+          <span class="person-name">{{ person.name }}</span>
+          <span class="person-id">ID: {{ person.id }}</span>
+        </div>
+        <button class="delete-btn" @click="deletePerson(person.id)">✕</button>
+      </li>
+    </ul>
+
+    <!-- 登録なし -->
+    <div class="empty" v-else>まだ登録されていません</div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+  setup() {
+    // ===== ref: リアクティブなデータ =====
+    const persons = ref([]);       // 一覧データ
+    const inputName = ref('');     // 入力中の名前
+    const error = ref('');         // エラーメッセージ
+    const loading = ref(true);     // ローディング状態
+
+    // ===== computed: 自動計算される値 =====
+    // inputNameが空でない場合のみtrueになる（ボタンの活性制御）
+    const canSubmit = computed(() => inputName.value.trim() !== '');
+
+    // personsの件数を自動カウント（personsが変わると自動更新）
+    const totalCount = computed(() => persons.value.length);
+
+    // ===== APIのベースURL =====
+    const API = '/api/persons';
+
+    // ===== onMounted: 画面表示後に一覧を取得（ライフサイクル） =====
+    onMounted(async () => {
+      await fetchPersons();
+    });
+
+    // 一覧取得
+    async function fetchPersons() {
+      loading.value = true;
+      try {
+        const res = await fetch(API);
+        persons.value = await res.json();
+      } catch (e) {
+        error.value = 'データの取得に失敗しました';
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    // 登録
+    async function addPerson() {
+      if (!canSubmit.value) return;
+      error.value = '';
+      try {
+        const res = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: inputName.value.trim() })
+        });
+        if (!res.ok) throw new Error('登録に失敗しました');
+        const newPerson = await res.json();
+        // 配列に追加（fetchし直さず差分更新）
+        persons.value.push(newPerson);
+        inputName.value = '';
+      } catch (e) {
+        error.value = e.message;
+      }
+    }
+
+    // 削除
+    async function deletePerson(id) {
+      try {
+        await fetch(`${API}/${id}`, { method: 'DELETE' });
+        // 削除した人を配列から除外
+        persons.value = persons.value.filter(p => p.id !== id);
+      } catch (e) {
+        error.value = '削除に失敗しました';
+      }
+    }
+
+    return { persons, inputName, error, loading, canSubmit, totalCount, addPerson, deletePerson };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

@@ -4,10 +4,41 @@ Spring Boot + Heroku + Vue.js の学習用リポジトリ。
 
 ---
 
+## 2026-04-04 今日やったこと
+
+### 1. Spring Boot + Heroku デプロイ
+- `Procfile`・`system.properties`・`application.properties` を作成
+- `HelloController.java` にエンドポイントを追加
+- `git push heroku master` で自動デプロイ完了
+
+### 2. Heroku Postgres（PostgreSQL）を追加
+- `heroku addons:create heroku-postgresql:essential-0` でDBを追加
+- `Message.java`（Entity）・`MessageRepository.java`（JpaRepository）を作成
+- `pom.xml` に `spring-boot-starter-data-jpa` と `postgresql` を追加
+- GET `/api/messages`・POST `/api/messages` エンドポイントを実装
+
+### 3. AWS移行の設計メモを作成
+- `docs/aws-migration.md` に構成提案・Terraformを記載
+- `docs/aws-migration.drawio` にアーキテクチャ図を作成
+
+### 4. 学んだこと
+- HerokuのDynoはLinuxコンテナ（Dockerに近い）
+- Heroku PostgresはAWS RDS上で動いている
+- Aurora Serverless v2はPostgreSQL互換 → コード変更なしで移行可能
+- JpaRepositoryを使うとSQLを書かずにDB操作できる
+- peacemindはHeroku→AWS移行を検討中
+
+### 次回やること
+- Dockerfileを作成してAWS移行の準備を進める
+- ECS Fargate + Aurora Serverless v2 へのデプロイを試す
+- Vue.jsの `watch` / ライフサイクル（`onMounted`）を学ぶ
+
+---
+
 ## 構成
 
 - **バックエンド**: Spring Boot 3.5.12 / Java 21
-- **デプロイ先**: Heroku（`salty-cove-04254`）
+- **デプロイ先**: Heroku（`powerful-dawn-80344`）
 - **フロントエンド学習**: Vue 3（`vuetube_learning.html`）
 
 ---
@@ -30,6 +61,63 @@ heroku open -a salty-cove-04254
 |-----|-----------|
 | `/` | Hello from Heroku! |
 | `/api/status` | Application is running successfully! |
+
+---
+
+## PostgreSQL + JPA メモ
+
+### 現在の構成
+
+| サービス | 内容 | 月額 |
+|---------|------|------|
+| Heroku Dyno (Basic) | Spring Boot実行環境 | $7 |
+| Heroku Postgres (Essential-0) | PostgreSQL | $5 |
+| **合計** | | **$12/月** |
+
+**アプリURL**: https://powerful-dawn-80344-bb5bfdab213d.herokuapp.com
+
+### エンドポイント
+
+| メソッド | URL | 説明 |
+|---------|-----|------|
+| GET | `/` | Hello from Heroku! |
+| GET | `/api/status` | ステータス確認 |
+| GET | `/api/messages` | メッセージ一覧（SELECT * FROM messages） |
+| POST | `/api/messages` | メッセージ登録（INSERT INTO messages） |
+
+### JpaRepositoryとは
+
+SQLを書かずにDBを操作できる仕組み。継承するだけで主要なメソッドが使える。
+
+```java
+// これだけでSQLが自動生成される
+public interface MessageRepository extends JpaRepository<Message, Long> {}
+
+messageRepository.findAll();       // SELECT * FROM messages
+messageRepository.save(message);   // INSERT INTO messages
+messageRepository.deleteById(id);  // DELETE FROM messages WHERE id = ?
+messageRepository.count();         // SELECT COUNT(*) FROM messages
+```
+
+### Heroku Postgres → Aurora Serverless v2（AWS移行時）
+
+**AuroraはPostgreSQL互換** なので、Javaのコードは変更不要。
+変わるのは `application.properties` の接続URLのみ。
+
+```properties
+# Heroku
+spring.datasource.url=${DATABASE_URL}
+
+# AWS Aurora（移行後）
+spring.datasource.url=jdbc:postgresql://aurora-endpoint:5432/peacemind
+```
+
+### 課金を止める方法
+
+```bash
+# アプリごと削除
+heroku apps:destroy powerful-dawn-80344
+```
 
 ---
 
