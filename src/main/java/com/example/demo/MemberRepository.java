@@ -13,3 +13,4 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     // 部署で絞り込み
     List<Member> findByDepartment(String department);
 }
+
