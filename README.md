@@ -35,6 +35,44 @@ Spring Boot + Heroku + Vue.js の学習用リポジトリ。
 
 ---
 
+## Jira × GitHub 連携メモ
+
+### 基本的な使い方
+JiraのissueIDをコミットメッセージに含めると自動でリンクされる。
+
+```bash
+git commit -m "PM-123 名前登録機能を追加"
+#                ↑ JiraのissueID（プロジェクトキー-番号）
+```
+
+### 連携でできること
+| 操作 | 自動で起きること |
+|------|----------------|
+| コミットメッセージにissueIDを書く | JiraのissueにGitHubのコミットがリンクされる |
+| PRをマージする | Jiraのステータスが自動更新される |
+| ブランチ名にissueIDを含める | Jiraのissueにブランチがリンクされる |
+
+### ブランチ名の例
+```bash
+git checkout -b feature/PM-123-名前登録機能
+```
+
+### peacemindで想定される構成
+```
+Jira（issue管理）
+    ↓
+GitHub（コード管理・PR・レビュー）
+    ↓
+AWS（デプロイ先）
+```
+
+### 入社後に確認すること
+- issueはJiraで管理しているか？
+- プロジェクトキーは何か？（例：PM、PEACEなど）
+- コミットメッセージのルールはあるか？
+
+---
+
 ## 構成
 
 - **バックエンド**: Spring Boot 3.5.12 / Java 21

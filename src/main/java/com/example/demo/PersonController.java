@@ -29,6 +29,13 @@ public class PersonController {
         return personService.save(request.getName());
     }
 
+    // 複数登録（トランザクション：1つでも失敗したら全件ロールバック）
+    @PostMapping("/bulk")
+    public List<Person> createMultiple(@RequestBody BulkRequest request) {
+        personService.saveMultiple(request.getNames());
+        return personService.findAll();
+    }
+
     // 削除
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
@@ -40,5 +47,11 @@ public class PersonController {
         private String name;
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
+    }
+
+    static class BulkRequest {
+        private List<String> names;
+        public List<String> getNames() { return names; }
+        public void setNames(List<String> names) { this.names = names; }
     }
 }

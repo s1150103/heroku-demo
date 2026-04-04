@@ -18,12 +18,27 @@
       border-radius: 12px;
       padding: 32px;
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
     }
     h1 { font-size: 1.4rem; margin-bottom: 24px; color: #333; }
+    h2 { font-size: 1rem; margin-bottom: 12px; color: #555; }
 
-    .form { display: flex; gap: 8px; margin-bottom: 24px; }
+    /* タブ */
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .tab {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: #f7f8fc;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .tab.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
+
+    /* フォーム */
+    .form { display: flex; gap: 8px; margin-bottom: 16px; }
     .form input {
       flex: 1;
       padding: 10px 14px;
@@ -34,23 +49,83 @@
       transition: border-color 0.2s;
     }
     .form input:focus { border-color: #4f6ef7; }
-    .form button {
+    .btn {
       padding: 10px 20px;
       background: #4f6ef7;
       color: #fff;
       border: none;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       cursor: pointer;
       transition: background 0.2s;
     }
-    .form button:hover { background: #3a57d4; }
-    .form button:disabled { background: #aaa; cursor: not-allowed; }
+    .btn:hover { background: #3a57d4; }
+    .btn:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-danger { background: #e53e3e; }
+    .btn-danger:hover { background: #c53030; }
 
+    /* 複数登録エリア */
+    .bulk-area {
+      background: #f7f8fc;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid #e8eaf0;
+    }
+    .bulk-inputs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .bulk-input-row { display: flex; gap: 8px; align-items: center; }
+    .bulk-input-row input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .bulk-input-row input:focus { border-color: #4f6ef7; }
+    .bulk-input-row input.invalid { border-color: #e53e3e; background: #fff5f5; }
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .remove-btn:hover { color: #e53e3e; background: #fff0f0; }
+    .bulk-actions { display: flex; gap: 8px; }
+    .btn-outline {
+      padding: 8px 16px;
+      background: #fff;
+      color: #4f6ef7;
+      border: 1px solid #4f6ef7;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover { background: #f0f3ff; }
+
+    /* トランザクション説明 */
+    .tx-info {
+      background: #fffbeb;
+      border: 1px solid #f6e05e;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 0.82rem;
+      color: #744210;
+      line-height: 1.6;
+    }
+    .tx-info strong { color: #c05621; }
+
+    /* メッセージ */
     .error { color: #e53e3e; font-size: 0.85rem; margin-bottom: 12px; }
-
+    .success { color: #38a169; font-size: 0.85rem; margin-bottom: 12px; }
     .count { font-size: 0.85rem; color: #888; margin-bottom: 12px; }
 
+    /* 一覧 */
     .list { list-style: none; }
     .list li {
       display: flex;
@@ -64,10 +139,8 @@
       transition: background 0.15s;
     }
     .list li:hover { background: #eef0fb; }
-
     .person-name { font-size: 1rem; color: #333; }
     .person-id { font-size: 0.75rem; color: #aaa; margin-left: 8px; }
-
     .delete-btn {
       background: none;
       border: none;
@@ -79,9 +152,9 @@
       border-radius: 4px;
     }
     .delete-btn:hover { color: #e53e3e; background: #fff0f0; }
-
     .empty { text-align: center; color: #aaa; padding: 32px 0; font-size: 0.9rem; }
     .loading { text-align: center; color: #aaa; padding: 32px 0; }
+    .divider { border: none; border-top: 1px solid #e8eaf0; margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -89,32 +162,58 @@
   <div class="container">
     <h1>名前登録システム</h1>
 
-    <!-- 入力フォーム -->
-    <div class="form">
-      <!-- v-model: inputName（ref）と双方向バインド -->
-      <input
-        v-model="inputName"
-        placeholder="名前を入力..."
-        @keyup.enter="addPerson"
-      />
-      <!-- :disabled: 入力が空の時はボタンを無効化（computed） -->
-      <button @click="addPerson" :disabled="!canSubmit">登録</button>
+    <!-- タブ切り替え -->
+    <div class="tabs">
+      <div class="tab" :class="{ active: tab === 'single' }" @click="tab = 'single'">1件登録</div>
+      <div class="tab" :class="{ active: tab === 'bulk' }" @click="tab = 'bulk'">複数登録（トランザクション）</div>
     </div>
 
-    <!-- エラーメッセージ（v-if: errorがある時だけ表示） -->
+    <!-- ===== 1件登録タブ ===== -->
+    <template v-if="tab === 'single'">
+      <div class="form">
+        <input v-model="inputName" placeholder="名前を入力..." @keyup.enter="addPerson" />
+        <button class="btn" @click="addPerson" :disabled="!canSubmit">登録</button>
+      </div>
+    </template>
+
+    <!-- ===== 複数登録タブ（トランザクション） ===== -->
+    <template v-else>
+      <!-- トランザクション説明 -->
+      <div class="tx-info">
+        <strong>トランザクションの学習ポイント：</strong><br>
+        複数名を一括登録します。<strong>1つでも空欄があると全件ロールバック</strong>（取り消し）されます。
+        試しに途中に空欄を入れて登録してみてください。
+      </div>
+
+      <div class="bulk-area">
+        <div class="bulk-inputs">
+          <div class="bulk-input-row" v-for="(name, index) in bulkNames" :key="index">
+            <input
+              v-model="bulkNames[index]"
+              :placeholder="`名前 ${index + 1}`"
+              :class="{ invalid: bulkSubmitted && bulkNames[index].trim() === '' }"
+            />
+            <button class="remove-btn" @click="removeRow(index)" v-if="bulkNames.length > 2">✕</button>
+          </div>
+        </div>
+        <div class="bulk-actions">
+          <button class="btn-outline" @click="addRow">＋ 行を追加</button>
+          <button class="btn" @click="addBulk" :disabled="bulkNames.length === 0">一括登録</button>
+        </div>
+      </div>
+    </template>
+
+    <!-- エラー・成功メッセージ -->
     <div class="error" v-if="error">{{ error }}</div>
+    <div class="success" v-if="successMsg">{{ successMsg }}</div>
 
-    <!-- 件数表示（computed で自動計算） -->
-    <div class="count" v-if="!loading">
-      登録件数: {{ totalCount }} 件
-    </div>
+    <hr class="divider">
 
-    <!-- ローディング中 -->
+    <!-- 件数・一覧 -->
+    <div class="count" v-if="!loading">登録件数: {{ totalCount }} 件</div>
     <div class="loading" v-if="loading">読み込み中...</div>
 
-    <!-- 一覧 -->
     <ul class="list" v-else-if="persons.length > 0">
-      <!-- v-for: persons配列をループして表示 -->
       <li v-for="person in persons" :key="person.id">
         <div>
           <span class="person-name">{{ person.name }}</span>
@@ -123,9 +222,7 @@
         <button class="delete-btn" @click="deletePerson(person.id)">✕</button>
       </li>
     </ul>
-
-    <!-- 登録なし -->
-    <div class="empty" v-else>まだ登録されていません</div>
+    <div class="empty" v-else-if="!loading">まだ登録されていません</div>
   </div>
 </div>
 
@@ -135,25 +232,28 @@ const { createApp, ref, computed, onMounted } = Vue;
 createApp({
   setup() {
     // ===== ref: リアクティブなデータ =====
-    const persons = ref([]);       // 一覧データ
-    const inputName = ref('');     // 入力中の名前
-    const error = ref('');         // エラーメッセージ
-    const loading = ref(true);     // ローディング状態
+    const persons    = ref([]);
+    const inputName  = ref('');
+    const error      = ref('');
+    const successMsg = ref('');
+    const loading    = ref(true);
+    const tab        = ref('single');
+    const bulkNames  = ref(['', '', '']);
+    const bulkSubmitted = ref(false);
 
-    // ===== computed: 自動計算される値 =====
-    // inputNameが空でない場合のみtrueになる（ボタンの活性制御）
-    const canSubmit = computed(() => inputName.value.trim() !== '');
-
-    // personsの件数を自動カウント（personsが変わると自動更新）
+    // ===== computed =====
+    const canSubmit  = computed(() => inputName.value.trim() !== '');
     const totalCount = computed(() => persons.value.length);
 
-    // ===== APIのベースURL =====
     const API = '/api/persons';
 
-    // ===== onMounted: 画面表示後に一覧を取得（ライフサイクル） =====
-    onMounted(async () => {
-      await fetchPersons();
-    });
+    // ===== onMounted: 画面表示後に一覧取得 =====
+    onMounted(async () => { await fetchPersons(); });
+
+    function clearMessages() {
+      error.value = '';
+      successMsg.value = '';
+    }
 
     // 一覧取得
     async function fetchPersons() {
@@ -168,10 +268,10 @@ createApp({
       }
     }
 
-    // 登録
+    // 1件登録
     async function addPerson() {
       if (!canSubmit.value) return;
-      error.value = '';
+      clearMessages();
       try {
         const res = await fetch(API, {
           method: 'POST',
@@ -180,26 +280,61 @@ createApp({
         });
         if (!res.ok) throw new Error('登録に失敗しました');
         const newPerson = await res.json();
-        // 配列に追加（fetchし直さず差分更新）
         persons.value.push(newPerson);
         inputName.value = '';
+        successMsg.value = '登録しました！';
       } catch (e) {
         error.value = e.message;
       }
     }
 
+    // 複数登録（トランザクション）
+    async function addBulk() {
+      clearMessages();
+      bulkSubmitted.value = true;
+      try {
+        const res = await fetch(`${API}/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ names: bulkNames.value })
+        });
+        if (!res.ok) {
+          // ロールバック発生！
+          const msg = await res.text();
+          throw new Error('ロールバックされました！全件登録が取り消されました。');
+        }
+        persons.value = await res.json();
+        bulkNames.value = ['', '', ''];
+        bulkSubmitted.value = false;
+        successMsg.value = `${bulkNames.value.length}件を一括登録しました！`;
+      } catch (e) {
+        error.value = e.message;
+      }
+    }
+
+    // 行を追加
+    function addRow() { bulkNames.value.push(''); }
+
+    // 行を削除
+    function removeRow(index) { bulkNames.value.splice(index, 1); }
+
     // 削除
     async function deletePerson(id) {
+      clearMessages();
       try {
         await fetch(`${API}/${id}`, { method: 'DELETE' });
-        // 削除した人を配列から除外
         persons.value = persons.value.filter(p => p.id !== id);
       } catch (e) {
         error.value = '削除に失敗しました';
       }
     }
 
-    return { persons, inputName, error, loading, canSubmit, totalCount, addPerson, deletePerson };
+    return {
+      persons, inputName, error, successMsg, loading,
+      tab, bulkNames, bulkSubmitted,
+      canSubmit, totalCount,
+      addPerson, addBulk, addRow, removeRow, deletePerson
+    };
   }
 }).mount('#app');
 </script>
