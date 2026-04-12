@@ -23,7 +23,13 @@ public class MemberService {
     // 種別で絞り込み
     @Transactional(readOnly = true)
     public List<Member> findByType(String type) {
-        return memberRepository.findByDtype(type);
+        Class<?> clazz = switch (type) {
+            case "EMPLOYEE" -> Employee.class;
+            case "PART_TIMER" -> PartTimer.class;
+            case "ADMIN" -> Admin.class;
+            default -> throw new IllegalArgumentException("不明な種別: " + type);
+        };
+        return memberRepository.findByType(clazz);
     }
 
     // ★ ポリモーフィズムのポイント7:

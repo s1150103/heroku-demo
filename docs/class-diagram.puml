@@ -1,0 +1,197 @@
+@startuml メンバー管理システム クラス図
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classFontName "Helvetica"
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam arrowThickness 2
+skinparam arrowColor #555555
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderThickness 2
+skinparam padding 5
+skinparam nodesep 60
+skinparam ranksep 80
+
+' ===== カラーパレット =====
+skinparam class {
+    HeaderBackgroundColor<<Abstract>>   #4F6EF7
+    HeaderFontColor<<Abstract>>         #FFFFFF
+    BorderColor<<Abstract>>             #4F6EF7
+    BackgroundColor<<Abstract>>         #EEF1FF
+
+    HeaderBackgroundColor<<Employee>>   #52C41A
+    HeaderFontColor<<Employee>>         #FFFFFF
+    BorderColor<<Employee>>             #52C41A
+    BackgroundColor<<Employee>>         #F0FFF4
+
+    HeaderBackgroundColor<<PartTimer>>  #F5A623
+    HeaderFontColor<<PartTimer>>        #FFFFFF
+    BorderColor<<PartTimer>>            #F5A623
+    BackgroundColor<<PartTimer>>        #FFF8EC
+
+    HeaderBackgroundColor<<Admin>>      #FF4D4F
+    HeaderFontColor<<Admin>>            #FFFFFF
+    BorderColor<<Admin>>                #FF4D4F
+    BackgroundColor<<Admin>>            #FFF1F0
+
+    HeaderBackgroundColor<<Repository>> #9673A6
+    HeaderFontColor<<Repository>>       #FFFFFF
+    BorderColor<<Repository>>           #9673A6
+    BackgroundColor<<Repository>>       #F5F0FF
+
+    HeaderBackgroundColor<<Service>>    #FF7A00
+    HeaderFontColor<<Service>>          #FFFFFF
+    BorderColor<<Service>>              #FF7A00
+    BackgroundColor<<Service>>          #FFF3E6
+
+    HeaderBackgroundColor<<Controller>> #555555
+    HeaderFontColor<<Controller>>       #FFFFFF
+    BorderColor<<Controller>>           #555555
+    BackgroundColor<<Controller>>       #F5F5F5
+
+    HeaderBackgroundColor<<DTO>>        #00B0D7
+    HeaderFontColor<<DTO>>              #FFFFFF
+    BorderColor<<DTO>>                  #00B0D7
+    BackgroundColor<<DTO>>              #E6F8FC
+}
+
+' ===== 抽象クラス: Member =====
+abstract class Member <<Abstract>> {
+    # id : Long
+    # name : String
+    # department : String
+    ==
+    + getId() : Long
+    + getName() : String
+    + getDepartment() : String
+    __ <i>抽象メソッド</i> __
+    + {abstract} getRoleLabel() : String
+    + {abstract} getPermissions() : String[]
+}
+
+' ===== サブクラス =====
+class Employee <<Employee>> {
+    - position : String
+    ==
+    + getRoleLabel() : <b>"社員"</b>
+    + getPermissions() : <b>[閲覧, 編集]</b>
+    + getPosition() : String
+}
+
+class PartTimer <<PartTimer>> {
+    - hoursPerWeek : Integer
+    ==
+    + getRoleLabel() : <b>"アルバイト"</b>
+    + getPermissions() : <b>[閲覧]</b>
+    + getHoursPerWeek() : Integer
+}
+
+class Admin <<Admin>> {
+    - adminLevel : String
+    ==
+    + getRoleLabel() : <b>"管理者"</b>
+    + getPermissions() : <b>[閲覧, 編集, 削除, 管理]</b>
+    + getAdminLevel() : String
+}
+
+' ===== DTO =====
+class MemberDTO <<DTO>> {
+    - id : Long
+    - name : String
+    - department : String
+    - roleLabel : String
+    - permissions : String[]
+}
+
+' ===== Repository =====
+interface MemberRepository <<Repository>> {
+    + findAll() : List<Member>
+    + findByDepartment(dept) : List<Member>
+    + save(member) : Member
+    + deleteById(id) : void
+}
+
+' ===== Service =====
+class MemberService <<Service>> {
+    - memberRepository : MemberRepository
+    ==
+    + findAll() : List<Member>
+    + findAllAsDTO() : List<MemberDTO>
+    + save(req) : Member
+    + delete(id) : void
+}
+
+' ===== Controller =====
+class MemberController <<Controller>> {
+    - memberService : MemberService
+    ==
+    + getAll() : List<MemberDTO>
+    + create(req) : Member
+    + delete(id) : void
+}
+
+' ===== 継承関係 =====
+Member <|-- Employee  : <color:#52C41A>継承
+Member <|-- PartTimer : <color:#F5A623>継承
+Member <|-- Admin     : <color:#FF4D4F>継承
+
+' ===== 依存関係 =====
+MemberRepository .right.> Member          : <color:#9673A6>操作対象
+MemberService    .right.> MemberRepository : <color:#FF7A00>《DI注入》
+MemberService    .down.>  MemberDTO        : <color:#00B0D7>変換
+MemberController .right.> MemberService    : <color:#555555>《DI注入》
+
+' ===== アノテーション注釈 =====
+note top of Member
+  <b>@Entity</b>
+  <b>@Inheritance</b>(SINGLE_TABLE)
+  <b>@DiscriminatorColumn</b>("dtype")
+  ────────────────────
+  1つのテーブルで全種別を管理
+end note
+
+note right of Employee
+  <b>@DiscriminatorValue</b>("EMPLOYEE")
+  ────────────────────
+  dtypeカラムに保存される識別子
+end note
+
+note bottom of MemberService
+  <b>@Service  @Transactional</b>
+  ────────────────────────
+  ポリモーフィズムを活用:
+  同じ List<Member> から
+  getRoleLabel() を呼ぶと
+  各サブクラスの実装が動く
+end note
+
+note bottom of MemberController
+  <b>@RestController</b>
+  <b>@CrossOrigin</b>(origins = "*")
+  ────────────────────────
+  GET  /api/members
+  POST /api/members
+  DELETE /api/members/{id}
+end note
+
+' ===== 凡例 =====
+legend right
+  <b>凡例</b>
+  ──────────────────
+  <color:#4F6EF7>■</color> 抽象クラス
+  <color:#52C41A>■</color> 社員（Employee）
+  <color:#F5A623>■</color> アルバイト（PartTimer）
+  <color:#FF4D4F>■</color> 管理者（Admin）
+  <color:#9673A6>■</color> Repository
+  <color:#FF7A00>■</color> Service
+  <color:#555555>■</color> Controller
+  <color:#00B0D7>■</color> DTO
+  ──────────────────
+  ──▷  継承（is-a関係）
+  ..▷  依存・DI注入
+endlegend
+
+@enduml

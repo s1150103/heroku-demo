@@ -46,11 +46,11 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- テスト用インメモリDB（GitHub Actions用） -->
+		<!-- インメモリDB（テスト + ローカル開発用） -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>test</scope>
+			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
