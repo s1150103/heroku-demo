@@ -2,194 +2,471 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>メンバー管理システム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メンバー管理</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: sans-serif; background: #f0f2f5; padding: 40px 16px; }
-    .container { max-width: 800px; margin: 0 auto; }
-    h1 { font-size: 1.5rem; color: #333; margin-bottom: 24px; }
+    /* ===== Notion Design System ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    /* カード */
-    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .card h2 { font-size: 1rem; color: #555; margin-bottom: 16px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* フォーム */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    input, select {
-      width: 100%; padding: 10px 12px; border: 1px solid #ddd;
-      border-radius: 8px; font-size: 0.95rem; outline: none;
+    :root {
+      --color-bg:          #ffffff;
+      --color-bg-warm:     #f6f5f4;
+      --color-text:        rgba(0,0,0,0.95);
+      --color-text-secondary: #615d59;
+      --color-text-muted:  #a39e98;
+      --color-blue:        #0075de;
+      --color-blue-active: #005bab;
+      --color-blue-focus:  #097fe8;
+      --color-badge-bg:    #f2f9ff;
+      --color-badge-text:  #097fe8;
+      --color-dark:        #31302e;
+      --color-teal:        #2a9d99;
+      --color-green:       #1aae39;
+      --color-orange:      #dd5b00;
+      --border:            1px solid rgba(0,0,0,0.1);
+      --shadow-card:       rgba(0,0,0,0.04) 0px 4px 18px,
+                           rgba(0,0,0,0.027) 0px 2.025px 7.85px,
+                           rgba(0,0,0,0.02) 0px 0.8px 2.93px,
+                           rgba(0,0,0,0.01) 0px 0.175px 1.04px;
+      --radius-btn:        4px;
+      --radius-card:       12px;
+      --radius-pill:       9999px;
     }
-    input:focus, select:focus { border-color: #4f6ef7; }
+
+    body {
+      font-family: Inter, -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--color-bg-warm);
+      color: var(--color-text);
+      min-height: 100vh;
+      padding: 48px 24px 80px;
+    }
+
+    /* ===== Layout ===== */
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ===== Page Header ===== */
+    .page-header {
+      margin-bottom: 40px;
+    }
+    .page-title {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -1px;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+    .page-subtitle {
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ===== Stats Row ===== */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--color-bg);
+      border: var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .stat-num.blue   { color: var(--color-blue); }
+    .stat-num.teal   { color: var(--color-teal); }
+    .stat-num.orange { color: var(--color-orange); }
+    .stat-num.dark   { color: var(--color-text); }
+    .stat-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      letter-spacing: 0.125px;
+    }
+
+    /* ===== Section Card ===== */
+    .section-card {
+      background: var(--color-bg);
+      border: var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0.125px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    /* ===== Form ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--color-bg);
+      border: 1px solid #dddddd;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 400;
+      color: rgba(0,0,0,0.9);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-input::placeholder { color: var(--color-text-muted); }
+    .form-input:focus {
+      border-color: var(--color-blue-focus);
+      box-shadow: 0 0 0 2px rgba(9,127,232,0.15);
+    }
+
+    /* ===== Buttons ===== */
     .btn {
-      padding: 10px 20px; border-radius: 8px; border: none;
-      font-size: 0.95rem; cursor: pointer; transition: opacity 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.33;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, transform 0.1s;
+      text-decoration: none;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: #4f6ef7; color: #fff; }
-    .btn-danger  { background: #ff4d4f; color: #fff; padding: 6px 12px; font-size: 0.8rem; }
+    .btn:active { transform: scale(0.95); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* フィルタータブ */
-    .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filter-tab {
-      padding: 6px 16px; border-radius: 20px; border: 1px solid #ddd;
-      background: #f7f8fc; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+    .btn-primary {
+      background: var(--color-blue);
+      color: #ffffff;
     }
-    .filter-tab.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
+    .btn-primary:hover:not(:disabled) { background: var(--color-blue-active); }
 
-    /* メンバーリスト */
-    .member-list { display: flex; flex-direction: column; gap: 10px; }
-    .member-card {
-      display: flex; align-items: center; gap: 14px;
-      padding: 14px 16px; border: 1px solid #eee; border-radius: 10px;
-      transition: box-shadow 0.2s;
+    .btn-ghost {
+      background: rgba(0,0,0,0.05);
+      color: var(--color-text);
+      border-color: transparent;
     }
-    .member-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .btn-ghost:hover:not(:disabled) { background: rgba(0,0,0,0.08); }
 
-    /* アバター */
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 13px;
+    }
+
+    /* ===== Pill Badge ===== */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.125px;
+      white-space: nowrap;
+    }
+    .pill-blue   { background: var(--color-badge-bg); color: var(--color-badge-text); }
+    .pill-teal   { background: #edfafa; color: var(--color-teal); }
+    .pill-orange { background: #fff4ed; color: var(--color-orange); }
+
+    /* ===== Filter Tabs ===== */
+    .filter-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      padding: 5px 14px;
+      border-radius: var(--radius-pill);
+      border: var(--border);
+      background: var(--color-bg-warm);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-chip.active {
+      background: var(--color-blue);
+      color: #ffffff;
+      border-color: var(--color-blue);
+    }
+    .filter-chip:hover:not(.active) { background: rgba(0,0,0,0.07); }
+
+    /* ===== Member List ===== */
+    .member-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .member-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: var(--border);
+      border-radius: 8px;
+      background: var(--color-bg);
+      transition: box-shadow 0.15s;
+    }
+    .member-row:hover {
+      box-shadow: var(--shadow-card);
+    }
+
+    /* Avatar */
     .avatar {
-      width: 42px; height: 42px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; color: #fff; font-size: 1rem; flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: #ffffff;
+      flex-shrink: 0;
     }
-    .avatar-EMPLOYEE  { background: #4f6ef7; }
-    .avatar-PART_TIMER { background: #52c41a; }
-    .avatar-ADMIN     { background: #ff7a00; }
+    .avatar-employee  { background: var(--color-blue); }
+    .avatar-parttimer { background: var(--color-teal); }
+    .avatar-admin     { background: var(--color-orange); }
 
-    /* ロールバッジ */
-    .role-badge {
-      padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    /* Member Info */
+    .member-info { flex: 1; min-width: 0; }
+    .member-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 3px;
     }
-    .badge-EMPLOYEE   { background: #e8ecff; color: #4f6ef7; }
-    .badge-PART_TIMER { background: #f0fff4; color: #52c41a; }
-    .badge-ADMIN      { background: #fff3e6; color: #ff7a00; }
+    .member-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .member-dept {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--color-text-muted);
+    }
 
-    /* 権限タグ */
-    .permissions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    /* Permission tags */
+    .perm-row {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 5px;
+    }
     .perm-tag {
-      padding: 2px 8px; border-radius: 4px; font-size: 0.72rem;
-      background: #f5f5f5; color: #666;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--color-bg-warm);
+      color: var(--color-text-secondary);
+      border: var(--border);
     }
 
-    /* 統計 */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .stat-item { text-align: center; padding: 12px; background: #f7f8fc; border-radius: 8px; }
-    .stat-num { font-size: 1.6rem; font-weight: 700; color: #4f6ef7; }
-    .stat-label { font-size: 0.75rem; color: #888; margin-top: 4px; }
+    /* Delete button */
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .delete-btn:hover { color: var(--color-orange); background: #fff4ed; }
 
-    /* エラー */
-    .error { color: #ff4d4f; font-size: 0.85rem; margin-top: 8px; }
-    .empty { text-align: center; padding: 40px; color: #aaa; }
+    /* ===== States ===== */
+    .empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: var(--color-text-muted);
+      font-size: 14px;
+      font-weight: 400;
+    }
+    .msg-error {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--color-orange);
+    }
+    .msg-success {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--color-teal);
+    }
 
-    .member-info { flex: 1; }
-    .member-name { font-weight: 700; font-size: 0.95rem; }
-    .member-dept { font-size: 0.8rem; color: #888; }
-    .member-extra { font-size: 0.78rem; color: #aaa; }
+    /* ===== Divider ===== */
+    .divider {
+      border: none;
+      border-top: var(--border);
+      margin: 0 0 20px;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 600px) {
+      body { padding: 32px 16px 64px; }
+      .page-title { font-size: 26px; letter-spacing: -0.5px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      .section-card { padding: 20px 16px; }
+    }
   </style>
 </head>
 <body>
 <div id="app">
-  <div class="container">
-    <h1>メンバー管理システム</h1>
+  <div class="page">
 
-    <!-- ===== 統計カード ===== -->
-    <div class="card">
-      <h2>統計（computedで自動計算）</h2>
-      <div class="stats">
-        <div class="stat-item">
-          <div class="stat-num">{{ totalCount }}</div>
-          <div class="stat-label">総メンバー数</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:#4f6ef7">{{ employeeCount }}</div>
-          <div class="stat-label">社員</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:#52c41a">{{ partTimerCount }}</div>
-          <div class="stat-label">アルバイト</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:#ff7a00">{{ adminCount }}</div>
-          <div class="stat-label">管理者</div>
-        </div>
+    <!-- ===== Page Header ===== -->
+    <div class="page-header">
+      <h1 class="page-title">メンバー管理</h1>
+      <p class="page-subtitle">Employee・PartTimer・Admin をポリモーフィズムで統一管理します</p>
+    </div>
+
+    <!-- ===== Stats ===== -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num dark">{{ totalCount }}</div>
+        <div class="stat-label">総メンバー</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num blue">{{ employeeCount }}</div>
+        <div class="stat-label">社員</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num teal">{{ partTimerCount }}</div>
+        <div class="stat-label">アルバイト</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num orange">{{ adminCount }}</div>
+        <div class="stat-label">管理者</div>
       </div>
     </div>
 
     <!-- ===== 登録フォーム ===== -->
-    <div class="card">
-      <h2>メンバー登録</h2>
+    <div class="section-card">
+      <div class="section-title">メンバーを追加</div>
       <div class="form-grid">
-        <input v-model="form.name" placeholder="名前" />
-        <input v-model="form.department" placeholder="部署" />
-        <select v-model="form.type">
+        <input class="form-input" v-model="form.name" placeholder="名前" />
+        <input class="form-input" v-model="form.department" placeholder="部署" />
+        <select class="form-input" v-model="form.type">
           <option value="">種別を選択</option>
           <option value="EMPLOYEE">社員</option>
           <option value="PART_TIMER">アルバイト</option>
           <option value="ADMIN">管理者</option>
         </select>
-        <!-- 種別によって入力項目が変わる（v-if） -->
-        <input v-if="form.type === 'EMPLOYEE'"   v-model="form.extra" placeholder="役職（例：エンジニア）" />
-        <input v-if="form.type === 'PART_TIMER'" v-model="form.extra" placeholder="週の勤務時間（例：20）" type="number" />
-        <input v-if="form.type === 'ADMIN'"      v-model="form.extra" placeholder="管理者レベル（例：L1）" />
+        <input class="form-input"
+          v-if="form.type === 'EMPLOYEE'"
+          v-model="form.extra"
+          placeholder="役職（例: エンジニア）" />
+        <input class="form-input"
+          v-if="form.type === 'PART_TIMER'"
+          v-model="form.extra"
+          placeholder="週の勤務時間（例: 20）"
+          type="number" />
+        <input class="form-input"
+          v-if="form.type === 'ADMIN'"
+          v-model="form.extra"
+          placeholder="管理者レベル（例: L1）" />
       </div>
-      <button class="btn btn-primary" @click="register" :disabled="!canSubmit">登録する</button>
-      <div class="error" v-if="error">{{ error }}</div>
+      <button class="btn btn-primary" @click="register" :disabled="!canSubmit">
+        登録する
+      </button>
+      <div class="msg-error" v-if="error">{{ error }}</div>
+      <div class="msg-success" v-if="successMsg">{{ successMsg }}</div>
     </div>
 
-    <!-- ===== フィルター + 一覧 ===== -->
-    <div class="card">
-      <h2>メンバー一覧</h2>
+    <!-- ===== 一覧 ===== -->
+    <div class="section-card">
+      <div class="section-title">メンバー一覧</div>
 
-      <!-- フィルタータブ -->
-      <div class="filter-tabs">
+      <!-- Filter chips -->
+      <div class="filter-row">
         <div
           v-for="tab in filterTabs"
           :key="tab.value"
-          class="filter-tab"
+          class="filter-chip"
           :class="{ active: activeFilter === tab.value }"
           @click="activeFilter = tab.value"
         >{{ tab.label }}</div>
       </div>
 
-      <!-- メンバーリスト（filteredMembersはcomputed） -->
+      <hr class="divider">
+
+      <!-- List -->
       <div class="member-list">
-        <div v-if="filteredMembers.length === 0" class="empty">
+        <div v-if="filteredMembers.length === 0" class="empty-state">
           メンバーがいません
         </div>
         <div
           v-for="member in filteredMembers"
           :key="member.id"
-          class="member-card"
+          class="member-row"
         >
-          <!-- アバター（種別によって色が変わる） -->
-          <div class="avatar" :class="'avatar-' + getRoleType(member.roleLabel)">
+          <!-- Avatar -->
+          <div class="avatar" :class="avatarClass(member.roleLabel)">
             {{ member.name[0] }}
           </div>
 
-          <!-- メンバー情報 -->
+          <!-- Info -->
           <div class="member-info">
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div class="member-name-row">
               <span class="member-name">{{ member.name }}</span>
-              <!-- ★ ポリモーフィズムの結果: roleLabel（社員/アルバイト/管理者） -->
-              <span class="role-badge" :class="'badge-' + getRoleType(member.roleLabel)">
+              <!-- ★ ポリモーフィズムの結果: roleLabel が種別ごとに変わる -->
+              <span class="pill" :class="pillClass(member.roleLabel)">
                 {{ member.roleLabel }}
               </span>
             </div>
             <div class="member-dept">{{ member.department }}</div>
-            <!-- ★ ポリモーフィズムの結果: permissions（種別によって異なる） -->
-            <div class="permissions">
-              <span v-for="perm in member.permissions" :key="perm" class="perm-tag">
-                {{ perm }}
-              </span>
+            <!-- ★ ポリモーフィズムの結果: permissions が種別ごとに変わる -->
+            <div class="perm-row">
+              <span
+                v-for="perm in member.permissions"
+                :key="perm"
+                class="perm-tag"
+              >{{ perm }}</span>
             </div>
           </div>
 
-          <!-- 削除ボタン -->
-          <button class="btn btn-danger" @click="deleteMember(member.id)">✕</button>
+          <!-- Delete -->
+          <button class="delete-btn" @click="deleteMember(member.id)" title="削除">✕</button>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -198,62 +475,57 @@ const { createApp, ref, computed, onMounted } = Vue;
 
 createApp({
   setup() {
-    const members = ref([]);
-    const error   = ref('');
+    const members      = ref([]);
+    const error        = ref('');
+    const successMsg   = ref('');
     const activeFilter = ref('ALL');
 
-    const form = ref({
-      name: '',
-      department: '',
-      type: '',
-      extra: ''
-    });
+    const form = ref({ name: '', department: '', type: '', extra: '' });
 
     const filterTabs = [
-      { value: 'ALL',       label: 'すべて' },
-      { value: 'EMPLOYEE',  label: '社員' },
-      { value: 'PART_TIMER',label: 'アルバイト' },
-      { value: 'ADMIN',     label: '管理者' },
+      { value: 'ALL',        label: 'すべて' },
+      { value: 'EMPLOYEE',   label: '社員' },
+      { value: 'PART_TIMER', label: 'アルバイト' },
+      { value: 'ADMIN',      label: '管理者' },
     ];
 
-    // ★ computed: 統計を自動計算
-    const totalCount    = computed(() => members.value.length);
-    const employeeCount = computed(() => members.value.filter(m => m.roleLabel === '社員').length);
-    const partTimerCount= computed(() => members.value.filter(m => m.roleLabel === 'アルバイト').length);
-    const adminCount    = computed(() => members.value.filter(m => m.roleLabel === '管理者').length);
+    // ===== computed =====
+    const totalCount     = computed(() => members.value.length);
+    const employeeCount  = computed(() => members.value.filter(m => m.roleLabel === '社員').length);
+    const partTimerCount = computed(() => members.value.filter(m => m.roleLabel === 'アルバイト').length);
+    const adminCount     = computed(() => members.value.filter(m => m.roleLabel === '管理者').length);
 
-    // ★ computed: フィルタリング
     const filteredMembers = computed(() => {
       if (activeFilter.value === 'ALL') return members.value;
-      return members.value.filter(m => getRoleType(m.roleLabel) === activeFilter.value);
+      return members.value.filter(m => roleType(m.roleLabel) === activeFilter.value);
     });
 
-    // ★ computed: 登録ボタンの活性/非活性
     const canSubmit = computed(() =>
-      form.value.name.trim() &&
-      form.value.department.trim() &&
-      form.value.type
+      form.value.name.trim() && form.value.department.trim() && form.value.type
     );
 
-    // roleLabel → dtypeに変換
-    function getRoleType(label) {
-      const map = { '社員': 'EMPLOYEE', 'アルバイト': 'PART_TIMER', '管理者': 'ADMIN' };
-      return map[label] || '';
+    // ===== helpers =====
+    function roleType(label) {
+      return { '社員': 'EMPLOYEE', 'アルバイト': 'PART_TIMER', '管理者': 'ADMIN' }[label] || '';
+    }
+    function avatarClass(label) {
+      return { '社員': 'avatar-employee', 'アルバイト': 'avatar-parttimer', '管理者': 'avatar-admin' }[label] || '';
+    }
+    function pillClass(label) {
+      return { '社員': 'pill-blue', 'アルバイト': 'pill-teal', '管理者': 'pill-orange' }[label] || '';
     }
 
-    // ★ onMounted: 画面表示後に自動でデータ取得（Vue3ライフサイクル）
-    onMounted(async () => {
-      await fetchMembers();
-    });
+    // ===== API =====
+    onMounted(fetchMembers);
 
     async function fetchMembers() {
       const res = await fetch('/api/members');
       members.value = await res.json();
     }
 
-    // ★ function: 登録処理
     async function register() {
       error.value = '';
+      successMsg.value = '';
       try {
         const res = await fetch('/api/members', {
           method: 'POST',
@@ -262,23 +534,23 @@ createApp({
         });
         if (!res.ok) throw new Error('登録に失敗しました');
         form.value = { name: '', department: '', type: '', extra: '' };
+        successMsg.value = '登録しました';
         await fetchMembers();
       } catch (e) {
         error.value = e.message;
       }
     }
 
-    // ★ function: 削除処理
     async function deleteMember(id) {
       await fetch(`/api/members/${id}`, { method: 'DELETE' });
       await fetchMembers();
     }
 
     return {
-      members, form, error, activeFilter, filterTabs,
+      members, form, error, successMsg, activeFilter, filterTabs,
       totalCount, employeeCount, partTimerCount, adminCount,
       filteredMembers, canSubmit,
-      register, deleteMember, getRoleType
+      register, deleteMember, avatarClass, pillClass
     };
   }
 }).mount('#app');
